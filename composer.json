@@ -6,12 +6,33 @@
     "license": "MIT",
     "require": {
         "php": "^7.3|^8.0",
+        "doctrine/inflector": "^1.4|^2.0",
         "fideloper/proxy": "^4.4",
         "fruitcake/laravel-cors": "^2.0",
         "guzzlehttp/guzzle": "^7.0.1",
+        "laravel-doctrine/orm": "^1.7",
         "laravel/framework": "^8.40",
-        "laravel/tinker": "^2.5"
+        "laravel/tinker": "^2.5",
+        "moneris/ecommerce-unified-api-php": "dev-master"
     },
+    "repositories": [
+        {
+            "type": "package",
+            "package": {
+                "name": "moneris/ecommerce-unified-api-php",
+                "version": "dev-master",
+                "source": {
+                    "url": "https://github.com/Moneris/eCommerce-Unified-API-PHP",
+                    "type": "git",
+                    "reference": "origin/master"
+                },
+                "autoload": {
+                    "classmap": ["mpgClasses.php"]
+                }
+            }
+
+        }
+    ],
     "require-dev": {
         "facade/ignition": "^2.5",
         "fakerphp/faker": "^1.9.1",

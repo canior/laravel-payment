@@ -3,6 +3,8 @@
 namespace App\Exceptions;
 
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
+use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Log;
 use Throwable;
 
 class Handler extends ExceptionHandler
@@ -37,5 +39,16 @@ class Handler extends ExceptionHandler
         $this->reportable(function (Throwable $e) {
             //
         });
+    }
+
+
+    public function render($request, Throwable $e) {
+
+        if ($request->isJson()) {
+            Log::error('Internal error', $e->getTrace());
+            return response()->json(['errors' => 'internal error'], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+
+        return parent::render($request, $e);
     }
 }

@@ -1,62 +1,165 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400"></a></p>
+# Moneris payment integration with Laravel and Doctrine 
 
-<p align="center">
-<a href="https://travis-ci.org/laravel/framework"><img src="https://travis-ci.org/laravel/framework.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+build a small Larvel service for payment integration with Moneris.
 
-## About Laravel
+for demo purpose 
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+a restful api is included:
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+```
+curl --header "Content-Type: application/json" --request POST --data '{"customerId":"1","amount":"1.00"}' http://127.0.0.1:8000/api/customers/purchase
+```
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+Assumptions:
 
-## Learning Laravel
+```
+- user has many gateway options, moneris is a valid option, user has many customers
+- customer belongs to user
+- customer makes purchase action and a transaction is created
+```
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains over 1500 video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+## Getting Started
 
-## Laravel Sponsors
+This project is for demo purpose, and technologies involve:
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the Laravel [Patreon page](https://patreon.com/taylorotwell).
+ ```
+ php framework: laravel
 
-### Premium Partners
+ third party components: laravel-doctrine, moneris 
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Cubet Techno Labs](https://cubettech.com)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[Many](https://www.many.co.uk)**
-- **[Webdock, Fast VPS Hosting](https://www.webdock.io/en)**
-- **[DevSquad](https://devsquad.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[OP.GG](https://op.gg)**
+ orm framework: doctrine orm 
 
-## Contributing
+ phpunit: demonstrate functional test, web test with test database
+ ```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+## Design
 
-## Code of Conduct
+Database design:
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+```
+users: user info with payment gateway option and config (for now only moneris is supported)
+customers: users' customers with credit card info (for now, each customer has one credit card)
+transactions: customer payment transactions
+```
 
-## Security Vulnerabilities
+Layer Pattern:
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+```
+1. api requests bind in JsonRequest for data validation
+2. controller: handles data validation and required service
+3. service: handle business logic
+4. repository: handle database related work 
+5. entity: orm models
+```
 
-## License
+Payment gateway integration:
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+```
+PaymentGatewayService: handle payment actions, for now only purchase action is supported
+PaymentGatewayService: handle all third party payment gateway integration
+GatewayPaymentRequest: dto for thirdparty payment action request (GatewayPurchaseRequest)
+GatewayPaymentResponse: dto for thirdparty payment action response (GatewayPurchaseResponse)
+```
+
+
+## Implementation
+
+Moneris integration for purchase action
+
+```
+MonerisPaymentServiceImpl (implements PaymentGatewayService): all payment service implementations (purchase, preauth, etc.)
+MonerisPurchaseRequest (implements GatewayPaymentRequest): moneris purchase action request
+MonerisPurchaseResponse (implements GatewayPaymentResponse): moneris purchase action response
+```
+
+New payment gateway integration:
+
+ex. Stripe purchase
+```
+StripePaymentServiceImpl: implements PaymentGatewayService and handle the integation
+StriipePurchaseRequest: implements GatewayPaymentRequest 
+StriipePurchaseResponse: implements GatewayPaymentResponse
+```
+
+New payment action
+
+ex. Pre-Auth
+```
+PaymentGatewayService: add new payment action to the inteface
+PaymentGatewayServiceImpl: implements the new payment action logic
+```
+
+
+### Installing on unix (ubuntu, mac os, centos, etc.)
+
+Prerequisites
+
+```
+php: 7.3 + 
+mysql: 5.5+ or postgresql 9.0+
+composer: 1.9+
+apache: 2.0+
+```
+
+Quick run
+
+```
+1. cp .env.exmaple to .env
+2. replace DATABASE_* to your local setup
+3. composer install
+4. create database from step 2
+5. create data seeds:
+   php artisan db:seed
+6. create database tables
+   php artisan doctrine:schema:create
+7. php artisan serve
+8. the api endpoint is http://127.0.0.1:8000/customers/purchase
+```
+
+## Running the tests
+
+Phpunit is used for functional test and web test
+
+### Unit Test
+
+```
+1. CustomerControllerTest: test api endpoints
+2. MonerisPaymentServiceTest: test moneris integration
+3. PaymentServiceTest: test payment  business logics
+
+Optimization:
+CustomerControllerTest is an integration test with database connection 
+and it should use another database which can be updated in phpuit.xml
+
+```
+
+### Run Tests
+
+```
+php artisan test
+```
+
+Result
+
+```
+   PASS  Tests\Unit\CustomerControllerTest
+  ✓ purchase
+
+   PASS  Tests\Unit\MonerisPaymentServiceTest
+  ✓ purchase
+
+   PASS  Tests\Unit\PaymentServiceTest
+  ✓ get payment gateway service with valid user
+  ✓ get payment gateway service with invalid user
+  ✓ process purchase approved
+  ✓ process purchase declined
+  ✓ process purchase error
+
+   PASS  Tests\Feature\ExampleTest
+  ✓ example
+
+  Tests:  8 passed
+  Time:   12.08s
+```
+
